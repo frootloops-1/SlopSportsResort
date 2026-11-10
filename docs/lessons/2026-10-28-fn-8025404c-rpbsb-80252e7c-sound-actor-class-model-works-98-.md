@@ -1,0 +1,10 @@
+# fn_8025404C (RPBsb_80252e7c): sound-actor class model works (98.7 -> 99.9); full flip needs project-wide vtable renames (~17 units)
+
+- status: works
+- tags: RPBsb_80252e7c,fn_8025404C,sound-actor,class-model,vtable-rename,placement-new,R17
+- scope: Pack/RPSports/RPBsbScene/RPBsb_80252e7c
+- source: orchestrator-1028
+
+symptom: li r0,8 vs li r4,8 tail after __construct_array in the second (0x78) actor block; the earlier lesson listed 10+ dead ends without the class model
+cause: Same sound-actor wall as fn_802B54A0 and fn_80214B64: the compiler-generated vptr stores of the intermediate TRPSndAudioActorBaseWithHandles<N1,N2> give li r0; hand-written vtable stores stay li r4 in every form (dead lbl_803C3FC0 stores, inline helper, non-polymorphic hand-store chain; Handles-only hand model 97.8).
+fix: BsbBallSndActor : TRPSndAudioActorBaseWithHandles<4,4> (name inferred; size 0x78; ctor passes 1; body f70=0, f6c=0, f74=0; u32 at 0x68). Weak-emission hygiene: explicit specialisations template<> TRPSndAudioHandles<8> and TRPSndAudioActorBaseWithHandles<4,4> with out-of-line virtuals and dtors, handle array built by hand (u8[8][4] + __construct_array in the ctor body); otherwise weak vtables land in .data (100 -> 91.65) and nw4r/snd.h inline SoundHandle ctor/dtor get emitted weak. Plain new colours the object temp r29 vs retail r26 (99.4); operator new + placement new on a named local (snd = __nw__FUl(0x78); snd = new (snd) BsbBallSndActor();) gives r26 (MATCH-PENDING R17 + ledger row; an if (snd) around the placement new duplicates the beq). Remaining diff = 2 vtable relocs: lbl_803C3FF8 -> __vt__21TRPSndAudioHandles<8> (17 src files: Bsb/Tns/Bow/Gol sound actors, weak data in RPTns_8021ba24), lbl_803C3FC0 -> __vt__36TRPSndAudioActorBaseWithHandles<4,4> (13 files), lbl_803C52B0 -> __vt__15BsbBallSndActor (RPBsb_802564b4, RPBsb_80258768, RPBsb_8027039c), lbl_803C5318 (outer actor vtable). The first (0x84) block would also have to become a class new, probably removing the placement-new marker (untested). Renaming only lbl_803C52B0 and lbl_803C3FF8 left it at 99.9.

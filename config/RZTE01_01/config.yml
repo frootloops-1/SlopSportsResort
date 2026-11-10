@@ -1,0 +1,15 @@
+# Wii Sports Resort (USA) Rev 1 - RZTE01, disc revision 1.
+# See config.example.yml for documentation.
+object_base: orig/RZTE01_01
+object: sys/main.dol
+hash: e3e22a9de62f6e11ded52e9a7e6933892963b219
+symbols: config/RZTE01_01/symbols.txt
+splits: config/RZTE01_01/splits.txt
+# CodeWarrior GC 3.0a3+ / Wii comment format (initial guess; refine once SDK libs are identified).
+mw_comment_version: 14
+detect_objects: true
+detect_strings: true
+write_asm: true
+# Data words that look like pointers but are not (would split a real symbol).
+block_relocations:
+- source: .data:0x8068DE04 # lbl_8068DB18 table word 0x807604C4, not &sdp_cb+0xC44

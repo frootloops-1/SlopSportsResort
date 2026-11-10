@@ -1,0 +1,9 @@
+# fn_802E7CCC: 0x4330 hi-word stored at entry vs per int-to-float means IRO unrolled a loop retail left to the backend
+
+- status: open
+- tags: int-to-float,0x4330,iro,unroll,opt_unroll_instr_count,RPBox_802e7b94
+- scope: RPBox_802e7b94 fn_802E7CCC
+
+symptom: fn_802E7CCC 76.9%, 568 vs 560 B: retail stores the 0x4330 high word at each of 4 int-to-float conversions; we store it once per slot at entry (-2 instrs), plus fnmsubs vs fsubs for 1-0.1*dt
+cause: GC 3.0a5.2 Operands.c fn_00590230: with >=4 int-to-float ETYPCONs codegen uses two alternating conversion slots with hi words stored at entry. The count is taken after IRO, so a loop IRO fully unrolls counts every copy, one left to the backend unroller counts once. IRO refuses to unroll when the body has more IR nodes than opt_unroll_instr_count (IroUnrollLoop.c IsLoopUnrollable); retail's 2-trip loop body was ~20 IR nodes larger at IRO time but compiled to the same code.
+fix: Box3Lerp(t,a,b) order like BoxLerp in RPBox_802cf93c and a single-expression f1B0 lerp: 75.9->76.9. Value-returning helpers (sumA = Box3AddSigned(sumA,sign,v)) stop IRO and give the 4 hi-word stores (77.6) but add copies that lose the in-place fmadds/fmr init pattern, and the helper is invented (not kept). Dead: direct body, manual unroll, int/s8 sign local, f32 fs=sign, repeated self->elem[i].plr, getters, void ref/ptr helpers, accumulator struct, loop shapes (!=, <=, unsigned, s8 index, ++i, n var, pointer stepping), sum-init spellings, operand swap. Next: a natural construct that adds ~20 IR nodes to the loop body which fold away after unrolling (if (i==0) or ?: selections) while the sums stay plain +=. Tooling: ~/Downloads/mwcc-cuyler36 holds a decompiled GC 3.0a5.2 backend; a scratch .cpp compiled with the unit flags tests compiler rules in seconds.

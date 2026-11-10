@@ -1,0 +1,167 @@
+#ifndef RP_SYSTEM_SPORTS_SYSTEM_DATA_H
+#define RP_SYSTEM_SPORTS_SYSTEM_DATA_H
+#include <Pack/types_pack.h>
+
+#include <egg/core.h>
+
+#include <revolution/WPAD.h>
+
+//! @addtogroup rp_system
+//! @{
+
+/**
+ * @brief Sports Pack save file system data
+ */
+class RPSportsSystemData {
+public:
+    /**
+     * @brief Training game ID
+     */
+    enum EGame {
+        EGame_Box_Mituchi,  //!< Throwing Punches
+        EGame_Box_Tamayoke, //!< Dodging
+        EGame_Box_Sandbag,  //!< Working the Bag
+
+        EGame_Gol_Target,  //!< Target Practice
+        EGame_Gol_Nearpin, //!< Hitting the Green
+        EGame_Gol_Onepat,  //!< Putting
+
+        EGame_Bow_Gatetoshi,  //!< Spin Control
+        EGame_Bow_Nagitaoshi, //!< Power Throws
+        EGame_Bow_Spareget,   //!< Picking Up Spares
+
+        EGame_Bsb_Renzoku,  //!< Batting Practice
+        EGame_Bsb_Uchiwake, //!< Swing Control
+        EGame_Bsb_Homerun,  //!< Hitting Home Runs
+
+        EGame_Tns_Kabeuchi,  //!< Target Practice
+        EGame_Tns_Nerauchii, //!< Timing Your Swing
+        EGame_Tns_Renzoku,   //!< Returning Balls
+
+        EGame_Max,
+    };
+
+    //! Old data exists for each player count
+    static const int OLD_DATA_LEN = 1 + 2 + 3 + 4;
+
+public:
+    /**
+     * @brief Constructor
+     */
+    RPSportsSystemData();
+
+    /**
+     * @brief Resets the data to a default save state
+     */
+    void reset();
+
+    /**
+     * @brief Gets the old data for the specified player count and player index
+     *
+     * @param[out] pIndex Official database index
+     * @param[out] pAddr Remote Bluetooth address
+     * @param playerNum Player count
+     * @param playerNo Player index
+     */
+    void getOldData(s8* pIndex, u8 pAddr[WPAD_ADDR_LEN], s32 playerNum,
+                    s32 playerNo) const;
+    /**
+     * @brief Sets the old data for the specified player count and player index
+     *
+     * @param[out] pIndex Official database index
+     * @param[out] pAddr Remote Bluetooth address
+     * @param playerNum Player count
+     * @param playerNo Player index
+     */
+    void setOldData(s8 index, const u8 pAddr[WPAD_ADDR_LEN], s32 playerNum,
+                    s32 playerNo);
+
+    /**
+     * @brief Sets the total number of fitness tests completed
+     *
+     * @param count Number of fitness tests completed
+     */
+    void setPhysicalEndCount(u8 count);
+    /**
+     * @brief Gets the total number of fitness tests completed
+     */
+    u8 getPhysicalEndCount() const;
+
+    /**
+     * @brief Sets the last date on which a fitness test was completed
+     *
+     * @param date Last completion date
+     */
+    void setPhysicalEndLastDate(RPTime16 date);
+    /**
+     * @brief Gets the last date on which a fitness test was completed
+     */
+    RPTime16 getPhysicalEndLastDate() const;
+
+    /**
+     * @brief Sets whether the specified training game's unlock cutscene has
+     * played
+     *
+     * @param idx Training game index
+     * @param open Whether the unlock cutscene has played
+     */
+    void setGameOpenDemo(u8 idx, bool open);
+    /**
+     * @brief Tests whether the specified training game's unlock cutscene has
+     * played
+     *
+     * @param idx Training game index
+     */
+    bool isGameOpenDemo(u8 idx) const;
+
+    /**
+     * @brief Sets whether the specified training game is available
+     *
+     * @param idx Training game index
+     * @param open Whether the game is available
+     */
+    void setGameOpen(u8 idx, bool open);
+    /**
+     * @brief Tests whether the specified training game is available
+     *
+     * @param idx Training game index
+     */
+    bool isGameOpen(u8 idx) const;
+
+    /**
+     * @brief Deserializes this object from the specified stream
+     *
+     * @param rStrm Memory stream
+     */
+    void read(EGG::RamStream& rStrm);
+    /**
+     * @brief Serializes this object to the specified stream
+     *
+     * @param rStrm Memory stream
+     */
+    void write(EGG::RamStream& rStrm);
+
+private:
+    // Resort layout (0x82AC bytes), recovered from the member-wise copy in
+    // RPSysSaveDataMgr::fn_802343B8. Member meanings are not known yet; the
+    // methods above are the Wii Sports declarations and are unverified here.
+    u8 unk0;                  // at 0x0
+    u8 unk1[0x84];            // at 0x1
+    u32 unk88[0x64 / 4];      // at 0x88
+    u32 unkEC[0x7D0 / 4];     // at 0xEC
+    u32 unk8BC[0x4488 / 4];   // at 0x8BC
+    u8 unk4D44;               // at 0x4D44
+    u32 unk4D48[0x64 / 4];    // at 0x4D48
+    u32 unk4DAC[0x64 / 4];    // at 0x4DAC
+    u8 unk4E10;               // at 0x4E10
+    u32 unk4E14;              // at 0x4E14
+    u32 unk4E18[0x2C8C / 4];  // at 0x4E18
+    u32 unk7AA4;              // at 0x7AA4
+    u8 unk7AA8;               // at 0x7AA8
+    u8 unk7AA9;               // at 0x7AA9
+    u16 unk7AAA[0x800 / 2];   // at 0x7AAA
+};
+
+//! @}
+
+#endif

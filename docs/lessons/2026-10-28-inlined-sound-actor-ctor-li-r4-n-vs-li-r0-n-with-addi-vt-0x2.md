@@ -1,0 +1,10 @@
+# Inlined sound-actor ctor: li r4,N vs li r0,N with addi vt+0x24 hoisted; fix = model the actor as real classes through TRPSndAudioActorBaseWithHandles<N1,N2> (fn_802B54A0 98.7 -> 99.7)
+
+- status: works
+- tags: RPGol_802b4f2c,fn_802B54A0,sound-actor,TRPSndAudioActorBaseWithHandles,ctor,class-model,RPSndObject,vtable
+- scope: Pack/RPSports/RPGolScene/RPGol_802b4f2c
+- source: orchestrator-1028
+
+symptom: tail after bl __construct_array: retail li r0,0xa / stw r0,0x40 / stw r0,0x44 / addi r0,r3,0x24; ours li r4,0xa with addi r0 hoisted above stw 0x44. Same signature as fn_8025404C (RPBsb_80252e7c) li r0,8 vs li r4,8
+cause: retail inlined actor ctor goes through the intermediate class TRPSndAudioActorBaseWithHandles<N1,N2> (RPSndAudioActorBase + TRPSndAudioHandles<N1+N2>); the compiler drops its vptr stores as dead but they produce the retail li r0 colouring. Deriving directly from both bases, or hand-written vt stores, still gives li r4
+fix: Local copies of the RPSndObject.h classes (EGG::Disposer, RPSndAudioActorBase with 7 virtuals, TRPSndAudioHandles<N> inline virtuals, TRPSndAudioActorBaseWithHandles<N1,N2>) plus class GolSndActor : TRPSndAudioActorBaseWithHandles<5,5> (ctor passes 1, out-of-line virtual dtor, u32 unk70; name inferred); body self->f5c = (s32) new GolSndActor(). Including the real RPSndObject.h fails (illegal function overloading on PSVECSquareDistance) so use a local class copy. Instructions then identical; remaining 99.7 is 2 vtable reloc names: symbols.txt lbl_803C7D28 -> __vt__11GolSndActor (0x68) and lbl_803C7D90 -> __vt__22TRPSndAudioHandles<10> (0x10), both also used by RPGolPlayer and RPGol_802b8568 (renames alone drop fn_802A0CB8 96.6->96.3 and fn_802B8E18 97.2->97.0 unless the class block + new GolSndActor() goes into those units too; scratch copy of RPGol_802b8568 matched fn_802B8E18 instruction for instruction). Trial DOL link with renames + temp flip: 9 bytes, all in fn_802B51D0; weak vtables/dtors dropped at link. Probably also fn_80214B64, fn_8032F2B8, fn_80323228, fn_802597F4, fn_8025404C. fn_802B51D0 ball/pin r28/r26 swap: declare-at-first-use (99.2), ply temp, scoped load temps: no gain.
